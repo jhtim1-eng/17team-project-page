@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>17조 대학로 자율주행 — Autonomous Driving in Complex Urban Daehak-ro Traffic</title>
+  <meta name="description" content="성균관대학교 자율주행 인공지능 및 제어 17조 최종 프로젝트 페이지 — 대학로 도심 복합 환경(v3) 자율주행 정책 학습, 공정 평가 및 POMDP 데이터셋" />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- =====================================================================
+       [빠른 설정 영역] 아래 PROJECT_LINKS 값만 실제 주소로 바꾸면
+       상단 네비게이션 바와 Hero 버튼 4곳의 링크가 한 번에 자동 연결됩니다.
+       ===================================================================== -->
+  <script>
+    window.PROJECT_LINKS = {
+      github: "https://github.com/junyeounyang/17team_MID_final", // [TODO] 최종 GitHub 저장소 주소로 교체
+      slidesPdf: "assets/slides_team17.pdf",                      // [TODO] 로그인 없이 열리는 PDF 링크 또는 docs/assets/ 내 PDF 경로
+      huggingface: "https://huggingface.co/datasets/YOUR_ID/daehakro-pomdp-v3", // [TODO] Hugging Face 데이터셋 주소로 교체
+      videoSection: "#demo-video"                                 // 페이지 내 영상 섹션 이동 (또는 외부 YouTube 링크)
+    };
+  </script>
+
+  <!-- ─── Sticky Navigation Bar ─────────────────────────────────────────── -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a href="#top" class="brand">Team 17 · <span>Daehak-ro AV</span></a>
+      <nav class="nav-links">
+        <a href="#abstract">Abstract</a>
+        <a href="#environment">Environment</a>
+        <a href="#mdp">MDP (v3)</a>
+        <a href="#method">Method</a>
+        <a href="#results">Results</a>
+        <a href="#dataset">Dataset</a>
+      </nav>
+      <div class="nav-quick-btns">
+        <a class="mini-btn js-link-github" href="#" target="_blank" rel="noopener">Code</a>
+        <a class="mini-btn js-link-pdf" href="#" target="_blank" rel="noopener">PDF</a>
+        <a class="mini-btn js-link-hf" href="#" target="_blank" rel="noopener">Dataset</a>
+        <a class="mini-btn js-link-video" href="#demo-video">Video</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ─── Hero Header (Academic Project Page Style) ─────────────────────── -->
+  <main id="top">
+    <section class="hero">
+      <div class="container">
+        <div class="venue-badge">
+          2026 자율주행 인공지능 및 제어 · Final Project · Team 17
+        </div>
+
+        <h1 class="hero-title">
+          대학로 도심 복합 교통 환경에서의 자율주행 정책 학습:<br />
+          무제약 보상 설계(v3)부터 커리큘럼 PPO · 하이브리드 BC–PPO 미세조정까지
+        </h1>
+        <p class="hero-subtitle">
+          Autonomous Driving in Complex Urban Daehak-ro Traffic: Rule-Free POMDP Formulation,
+          Multi-Stage Curriculum PPO, and Hybrid BC–PPO with Selective Lane-Head Refinement
+        </p>
+
+        <!-- 팀원 및 소속 -->
+        <div class="authors-row">
+          <span class="author-item">양준연</span>
+          <span class="author-item">이준서</span>
+          <span class="author-item">곽재현</span>
+        </div>
+        <div class="affiliation">
+          성균관대학교 (Sungkyunkwan University) · Artificial Intelligence and Control for Autonomous Driving
+        </div>
+
+        <!-- 팀 역할 분담 요약 (6_Project_Evaluation.md 권장 1눈에 보기) -->
+        <div class="role-grid">
+          <div class="role-chip">
+            <strong>① 공통 환경 · 교통 · 데이터셋</strong>
+            대학로 SUMO 도로/버스/긴급차 구현, v3 관측·보상 설계, 확장 POMDP 데이터 수집
+          </div>
+          <div class="role-chip">
+            <strong>② 역할 1 — 순수 PPO 커리큘럼</strong>
+            4단계 보상 스케줄링 및 단거리 차로·TTC·횡단보도 보상 셰이핑 (v3→v8)
+          </div>
+          <div class="role-chip">
+            <strong>③ 역할 2 — 하이브리드 BC + PPO</strong>
+            가감속 회귀·차로 3-way 분류 BC 학습 및 PPO 미세조정·차로 헤드 복원
+          </div>
+          <div class="role-chip">
+            <strong>④ 역할 3 — 약한 BC + PPO / 비교</strong>
+            위험 상황 가중치 실험, 1,500 에피소드 공정 벤치마크 검증 및 프로젝트 페이지
+          </div>
+        </div>
+
+        <!-- [필수 링크 4종 버튼 바] -->
+        <div class="link-buttons">
+          <a class="pill-btn js-link-github" href="#" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.68-1.28-1.68-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11.1 11.1 0 0 1 5.8 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.69 5.39-5.26 5.67.41.36.78 1.06.78 2.14 0 1.55-.01 2.79-.01 3.17 0 .31.21.68.8.56A11.51 11.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/>
+            </svg>
+            <span>Code (GitHub)</span>
+          </a>
+
+          <a class="pill-btn primary-accent js-link-pdf" href="#" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="8" y1="13" x2="16" y2="13"/>
+              <line x1="8" y1="17" x2="13" y2="17"/>
+            </svg>
+            <span>Presentation (PDF)</span>
+          </a>
+
+          <a class="pill-btn js-link-hf" href="#" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <ellipse cx="12" cy="5" rx="9" ry="3"/>
+              <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+              <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+            </svg>
+            <span>Dataset (Hugging Face)</span>
+          </a>
+
+          <a class="pill-btn js-link-video" href="#demo-video">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+            <span>Driving Video (30s+)</span>
+          </a>
+        </div>
+
+        <p class="link-check-note">
+          * 모든 링크(GitHub 저장소, 발표 자료 PDF, Hugging Face 데이터셋, 주행 시뮬레이션 영상)는 별도 로그인 없이 열람 가능합니다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ─── Teaser Video & Key Metrics ──────────────────────────────────── -->
+    <section id="demo-video" class="teaser-section">
+      <div class="container">
+        <div class="media-frame">
+          <!-- [TODO: 주행 영상 연결 방법]
+               1) docs/assets/videos/main_drive.mp4 파일을 넣은 뒤 아래 <video> 주석을 해제하고
+               2) 바로 아래 <div class="video-placeholder">...</div> 블록을 지우면 바로 재생됩니다. -->
+          <!--
+          <video controls autoplay muted loop playsinline preload="metadata">
+            <source src="assets/videos/main_drive.mp4" type="video/mp4" />
+            브라우저가 비디오 태그를 지원하지 않습니다.
+          </video>
+          -->
+          <div class="video-placeholder">
+            <div class="play-circle">▶</div>
+            <h3>대표 자율주행 완주 시뮬레이션 영상 (30초 이상) <span class="todo-tag">영상 삽입 위치</span></h3>
+            <p>
+              이화장길 어린이보호구역(30 km/h) 출발 → 대학로 본선(버스전용차로 · 정류장 · 광폭 횡단보도 · 사이렌 긴급차) →
+              혜화동로터리 회전교차로 통과 완주 주행 영상<br />
+              <code>docs/assets/videos/main_drive.mp4</code> 배치 또는 YouTube 임베드로 교체
+            </p>
+          </div>
+        </div>
+
+        <p class="teaser-caption">
+          <strong>Figure 1.</strong> 서울 종로구 대학로(이화장길 ~ 혜화동로터리, 약 1.5 km) SUMO 1.27.1 환경에서의 자율주행 에이전트 주행 시연.
+          SUMO의 내장 속도·차로 안전장치를 모두 끄고(<code>speedMode=0</code>, <code>laneChangeMode=0</code>),
+          51차원 부분관측만으로 가감속과 차로변경을 직접 제어합니다.
+        </p>
+
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-num">1.5 km · 51-D</div>
+            <div class="kpi-label">실제 대학로 복합 경로</div>
+            <div class="kpi-sub">시야 100 m 부분관측 · 0.5초 제어 주기</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-num">1,500 판</div>
+            <div class="kpi-label">동일 조건 공식 벤치마크</div>
+            <div class="kpi-sub">5개 고정 시드(110~150) × 각 300 에피소드</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-num">3.5%</div>
+            <div class="kpi-label">충돌률 (&lt; 5% 기준 충족)</div>
+            <div class="kpi-sub">BC+PPO 기준 보행자 충돌 74% 감소 (19→5건)</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-num">80.5%</div>
+            <div class="kpi-label">위반 없이 완주율 (Clean)</div>
+            <div class="kpi-sub">신호위반 214건 → 8건 (96.3% 절감)</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Abstract ────────────────────────────────────────────────────── -->
+    <section id="abstract" class="alt">
+      <div class="container">
+        <h2 class="section-title">Abstract</h2>
+        <p class="section-subtitle">문제 정의 · 무제약 환경 설계(v3) · 팀 공동 실험 파이프라인 요약</p>
+
+        <div class="abstract-box">
+          <p>
+            도심 자율주행은 단순 직선 고속도로와 달리 <strong>어린이보호구역 속도 제한(30 km/h)</strong>,
+            <strong>점선·실선이 교차하는 버스전용차로</strong>, <strong>실제 배차간격으로 정차하는 다수 버스 노선</strong>,
+            <strong>보행자 횡단보도</strong>, <strong>사이렌 긴급차량 양보</strong>, 그리고
+            <strong>다차로 회전교차로(혜화동로터리) 진입·이탈</strong>이 연속적으로 결합된 고난도 의사결정 문제를 요구한다.
+            본 프로젝트에서는 서울 대학로 일대 약 1.5 km 구간을 SUMO 1.27.1 기반 미시 교통 시뮬레이션으로 정밀 구현하고,
+            순간이동 비활성화(<code>time-to-teleport -1</code>) 조건에서도 1시간 이상 정체 사멸이 발생하지 않는 현실적인 배경 교통류를 구축하였다.
+          </p>
+          <p>
+            특히 본 팀은 정책이 내린 행동을 환경이 규칙으로 강제 차단하지 않고 오직 <strong>보상(감점) 신호를 통해 스스로 교통법규와 안전을 학습</strong>하도록
+            설계한 <strong>공통 환경 v3</strong>를 정립하였다. 나아가 해시 무결성 검증 도구(<code>check_setup.py</code>, <code>PROTECTED.sha256</code>)로
+            환경·관측(51차원)·평가 프로토콜(1,500 에피소드)을 엄격히 통제한 뒤,
+            <strong>① 4단계 커리큘럼 순수 PPO</strong>, <strong>② 하이브리드 헤드 BC 및 BC+PPO 미세조정</strong>,
+            <strong>③ 사후 차로 헤드 선택적 정밀화(Selective Lane-Head Refinement)</strong>의 세 가지 접근법을 체계적으로 비교·분석하였다.
+            마지막으로 최종 학습 정책을 활용해 15개 신호등(137개 연결 상태), 교차로 상충 차량, 보행자, 긴급차 보조 상태 등
+            대학로 특화 23개 확장 상태 변수를 포함한 대규모 POMDP 데이터셋을 구축하여 Hugging Face에 공개한다.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Real Road vs SUMO Environment ──────────────────────────────── -->
+    <section id="environment">
+      <div class="container-wide">
+        <h2 class="section-title">Real-World Road vs. SUMO Environment</h2>
+        <p class="section-subtitle">
+          선정 지역(이화장길 ~ 대학로 ~ 혜화동로터리)의 실제 도로 구조적 특징과 SUMO 구현 및 주변 차량 Interaction 설계
+        </p>
+
+        <!-- 실제 도로 vs SUMO 비교 이미지 슬롯 -->
+        <div class="two-col" style="margin-bottom: 1.5rem;">
+          <div class="card">
+            <div class="img-placeholder">
+              <strong>실제 도로 위성 / 로드뷰 이미지 <span class="todo-tag">이미지 교체</span></strong>
+              <span>이화장길 보호구역 · 대학로 버스전용차로 · 혜화동로터리 항공/로드뷰<br /><code>docs/assets/images/real_daehakro.png</code></span>
+            </div>
+            <h3>선정 실제 도로 (서울 종로구 대학로 일대)</h3>
+            <p>
+              어린이보호구역 이면도로에서 간선도로(대학로)로 우회전 합류한 뒤, 다수의 신호·비신호 교차로와 버스전용차로 구간을 지나
+              비정형 5지 회전교차로인 혜화동로터리로 빠져나가는 도심 핵심 구간입니다.
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="img-placeholder">
+              <strong>SUMO 1.27.1 네트워크 구현 화면 <span class="todo-tag">이미지 교체</span></strong>
+              <span>측점(STA) 기반 차로·횡단보도·버스베이·로터리 구현 스크린샷<br /><code>docs/assets/images/sumo_daehakro.png</code></span>
+            </div>
+            <h3>구현한 SUMO 시뮬레이션 환경 (<code>env/daehakro_*</code>)</h3>
+            <p>
+              실제 거리 측점과 OpenStreetMap 형상을 결합해 보도·횡단보도 폭(혜화역 앞 E 횡단보도 30 m 등)·유턴 베이·점선/실선 버스차로 경계를
+              미터(m) 단위로 재현하고, 보행 신호 직전 우회전 적색 전환 등 현실 신호 현시를 검증했습니다.
+            </p>
+          </div>
+        </div>
+
+        <!-- 대학로 1.5km 주행 경로 및 주요 상호작용 구간 도식 (내장 SVG) -->
+        <div class="diagram-box">
+          <svg viewBox="0 0 980 210" width="100%" role="img" aria-label="대학로 1.5km 자율주행 경로 및 핵심 상호작용 구간 도식">
+            <defs>
+              <linearGradient id="routeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#7c3aed" />
+                <stop offset="30%" stop-color="#2563eb" />
+                <stop offset="75%" stop-color="#0ea5e9" />
+                <stop offset="100%" stop-color="#059669" />
+              </linearGradient>
+            </defs>
+            <rect x="10" y="10" width="960" height="190" rx="12" fill="#f8fafc" stroke="#e2e8f0" />
+            <!-- Main timeline line -->
+            <line x1="75" y1="95" x2="905" y2="95" stroke="url(#routeGrad)" stroke-width="6" stroke-linecap="round" />
+
+            <!-- Node 1: School Zone -->
+            <circle cx="95" cy="95" r="11" fill="#7c3aed" />
+            <text x="95" y="45" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">① 이화장길 출발</text>
+            <text x="95" y="64" text-anchor="middle" font-size="11" fill="#64748b">어린이보호구역 (30 km/h)</text>
+            <text x="95" y="130" text-anchor="middle" font-size="11" fill="#475569">학부모 정차 차량 회피</text>
+            <text x="95" y="146" text-anchor="middle" font-size="11" fill="#475569">어린이 보행자 횡단보도</text>
+
+            <!-- Node 2: Bus Bay & Side Streets -->
+            <circle cx="295" cy="95" r="11" fill="#4f46e5" />
+            <text x="295" y="45" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">② 방송통신대 · M · O · I</text>
+            <text x="295" y="64" text-anchor="middle" font-size="11" fill="#64748b">STA 85m ~ 548m (50 km/h)</text>
+            <text x="295" y="130" text-anchor="middle" font-size="11" fill="#475569">점선/실선 버스전용차로 교차</text>
+            <text x="295" y="146" text-anchor="middle" font-size="11" fill="#475569">버스 베이 · 양방향 옆길 합류</text>
+
+            <!-- Node 3: Hyehwa Station Wide Crosswalk & Emergency -->
+            <circle cx="515" cy="95" r="11" fill="#2563eb" />
+            <text x="515" y="45" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">③ 혜화역 광폭 횡단보도 E · D · C</text>
+            <text x="515" y="64" text-anchor="middle" font-size="11" fill="#64748b">STA 650m ~ 880m</text>
+            <text x="515" y="130" text-anchor="middle" font-size="11" fill="#475569">30m 광폭 횡단보도 · 11개 버스 노선</text>
+            <text x="515" y="146" text-anchor="middle" font-size="11" fill="#475569">90초 주기 사이렌 긴급차 길 터주기</text>
+
+            <!-- Node 4: Pre-rotary lane selection -->
+            <circle cx="720" cy="95" r="11" fill="#0ea5e9" />
+            <text x="720" y="45" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">④ 유턴 베이 · A · RS 진입부</text>
+            <text x="720" y="64" text-anchor="middle" font-size="11" fill="#64748b">STA 950m ~ 1,024m</text>
+            <text x="720" y="130" text-anchor="middle" font-size="11" fill="#475569">로터리 진입 전 사전 차로 선택</text>
+            <text x="720" y="146" text-anchor="middle" font-size="11" fill="#475569">버스차로 끝 구간 합류 병목</text>
+
+            <!-- Node 5: Hyehwa Rotary -->
+            <circle cx="890" cy="95" r="11" fill="#059669" />
+            <text x="890" y="45" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">⑤ 혜화동로터리 → 완주</text>
+            <text x="890" y="64" text-anchor="middle" font-size="11" fill="#64748b">arcE → arcN2 → arcW1 (~1.5 km)</text>
+            <text x="890" y="130" text-anchor="middle" font-size="11" fill="#475569">단거리 막힌 차로(12.8m) 연속 변경</text>
+            <text x="890" y="146" text-anchor="middle" font-size="11" fill="#475569">회전차량 우선권 판단 및 양보</text>
+          </svg>
+          <div class="diagram-caption">
+            <strong>Figure 2.</strong> 자율주행 차량(Ego AV) 주행 경로(<code>r_ego</code>)의 구간별 도로 구조 및 핵심 차량·보행자 상호작용 설계.
+          </div>
+        </div>
+
+        <!-- 도로·교통 특징 4분할 카드 -->
+        <div class="four-col">
+          <div class="card">
+            <h3>🚌 실제 노선 기반 대중교통 &amp; 버스전용차로</h3>
+            <ul>
+              <li>실제 노선·배차간격을 반영한 <strong>11개 버스 흐름</strong>(북행 129대/시, 남행 44대/시) 및 정류장별 선택 정차 구현</li>
+              <li>북행 우측 차로를 측점별로 <strong>점선(우회전 진출입 허용)</strong>과 <strong>실선(버스 전용)</strong>으로 세밀 분할</li>
+              <li>방송통신대 앞 및 로터리 구간 <strong>버스 베이(Bus Bay)</strong>와 일반 버스전용차로를 구분 설계</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>🚸 어린이보호구역 · 보행자 · 정차 차량</h3>
+            <ul>
+              <li>이화장길 출발 구간 <strong>30 km/h 제한속도</strong> 및 학부모 승하차 정차 차량(<code>stopped=true</code>) 배치</li>
+              <li>어린이·성인 보행자 분리 생성 및 신호/비신호 횡단보도 보행 통행</li>
+              <li>전방 차량이 단순 신호 대기인지 정류장·승하차 정차 중인지 구분해 차로변경 판단 유도</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>🚑 사이렌 긴급차 출동 &amp; 비보호 교차 상호작용</h3>
+            <ul>
+              <li><strong>90초 주기 구급차·소방차 출동</strong>: 배경 일반 차량은 <code>EmergencyAssist</code>로 길을 터주며, AV는 관측만으로 스스로 판단</li>
+              <li>사이렌 차량 양보 목적의 일시적 버스전용차로 진입은 감점·위반에서 면제(통과 후 5초 이내 복귀 조건)</li>
+              <li>서쪽 비신호 옆길 4곳(<code>WA~WD</code>) 우회전 합류 및 회전교차로 진입 상충 상호작용</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>⚙️ 무순간이동(No-Teleport) 교통류 무결성 검증</h3>
+            <ul>
+              <li>SUMO의 막힌 차량 강제 제거 기능 비활성화(<code>time-to-teleport -1</code>, 켜져 있으면 즉시 에러 중단)</li>
+              <li>남행 승용차 유입량을 실제 교통량 통계(방송통신대 앞 754대/시 → 시뮬레이션 759대/시)에 보정</li>
+              <li>배경 차량 단독 1시간 × 10개 시드 연속 시험 결과 <strong>교차로 데드락 0건, 순간이동 0건</strong> 검증 완료</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── MDP Formulation (v3) ────────────────────────────────────────── -->
+    <section id="mdp" class="alt">
+      <div class="container-wide">
+        <h2 class="section-title">Rule-Free POMDP Formulation (Environment v3)</h2>
+        <p class="section-subtitle">
+          "정책이 낸 명령을 환경이 규칙으로 막지 않고, 오직 관측과 보상으로 교통법규를 배운다"
+        </p>
+
+        <div class="callout">
+          <strong>핵심 설계 전환 (v2 → v3 컨설팅 반영):</strong>
+          기존 환경에서 인위적으로 막았던 ① 차로 제한속도 초과 가속 커팅, ② 실선·버스전용차로 진입 명령 거부,
+          ③ 관측 내 양보 우선권 정답 제공을 모두 제거했습니다. AV 차종을 <code>custom1</code>으로 분리해 물리적 진입을 열어두고,
+          <strong>시야 100 m 내 51차원 부분관측</strong>과 <strong>보상·감점 체계</strong>만으로 제한속도 준수·양보·차로 법규를 스스로 학습합니다.
+        </div>
+
+        <div class="two-col" style="margin-bottom: 1.4rem;">
+          <!-- 51-D Observation Table -->
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>인덱스</th>
+                  <th>관측 항목 (총 51차원, 범위 [-1, 1])</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>[0..20]</code></td>
+                  <td>자차 속도·가속도 및 전·후·좌·우 6방향 인접 차량 상대 거리·속도 (시야 <code>W=100 m</code>, 나란히 주행 간격 0 보정)</td>
+                </tr>
+                <tr>
+                  <td><code>[21..30]</code></td>
+                  <td>좌2~우2 5개 차로의 <strong>경로 기준 연결 거리</strong> 및 <strong>차로 밀도</strong> (보도 제외, 버스차로·베이 포함)</td>
+                </tr>
+                <tr>
+                  <td><code>[31]</code></td>
+                  <td>현재 차로 제한속도 비율 (어린이보호구역 <code>0.6</code>, 일반 도로 <code>1.0</code>)</td>
+                </tr>
+                <tr>
+                  <td><code>[32..34]</code></td>
+                  <td>다음 신호 정지선까지 거리 <span style="white-space:nowrap;">(&radic;(d/100))</span> 및 적색·황색 여부 (정지선 통과 순간 실제 신호로 위반 판정)</td>
+                </tr>
+                <tr>
+                  <td><code>[35..36]</code></td>
+                  <td>다음 횡단보도까지 거리 <span style="white-space:nowrap;">(&radic;(d/100))</span> 및 통행·대기 보행자 존재 여부</td>
+                </tr>
+                <tr>
+                  <td><code>[37..42]</code></td>
+                  <td>전방 교차로 <strong>상충 차량 상위 2대</strong>의 상충점 거리·상대 속도 (<strong>우선권 정보 미제공</strong> — 정책이 양보 결정)</td>
+                </tr>
+                <tr>
+                  <td><code>[43..45]</code></td>
+                  <td>후방 사이렌 긴급차 거리·동일 차로 여부, 전방 정류장/승하차 정차 차량 여부</td>
+                </tr>
+                <tr>
+                  <td><code>[46..47]</code></td>
+                  <td>정지 지점(적·황신호, 보행자, 끊기는 차로 끝) 및 앞차 추돌 방지를 위한 <strong>필요 감속도 비율</strong></td>
+                </tr>
+                <tr>
+                  <td><code>[48..50]</code></td>
+                  <td>왼쪽 · 현재 · 오른쪽 차로의 <strong>실선 버스전용차로</strong> 여부 플래그</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Action & Reward Table -->
+          <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <div class="card">
+              <h3>🎮 하이브리드 행동 공간 (2-D Action)</h3>
+              <ul>
+                <li><strong>연속 가감속 <code>a[0] ∈ [-1, 1]</code></strong>: 최대 감속 <code>-4.5 m/s²</code> ~ 최대 가속 <code>+2.6 m/s²</code> 매핑 (SUMO 속도 안전장치 비활성화)</li>
+                <li><strong>이산 차로변경 <code>a[1] ∈ {+1, 0, -1}</code></strong>: 좌측 변경(<code>+1</code>) · 차로 유지(<code>0</code>) · 우측 변경(<code>-1</code>) (SUMO 자동 차로변경 비활성화, 기본 측면 충돌 안전 간격 검사만 유지)</li>
+              </ul>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>구분</th>
+                    <th>보상 / 감점 항목 (<code>REWARD</code> 기본값)</th>
+                    <th class="num-col">값</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>주행·완주</td>
+                    <td>목적지 도착 / 제한속도 비례 전진 / 스텝 시간</td>
+                    <td class="num-col"><code>+10</code> / <code>+0.1</code> / <code>-0.01</code></td>
+                  </tr>
+                  <tr>
+                    <td>중대 실패 (종료)</td>
+                    <td>보행자 충돌 / 차량 충돌(2.5 m) / 경로 이탈 / 오래 멈춤(240s)</td>
+                    <td class="num-col"><code>-40</code> / <code>-20</code> / <code>-10</code> / <code>-5</code></td>
+                  </tr>
+                  <tr>
+                    <td>법규 위반 (계속)</td>
+                    <td>신호위반 / 횡단보도 위반 / 양보 위반 / 실선 침범</td>
+                    <td class="num-col"><code>-15</code> / <code>-10</code> / <code>-8</code> / <code>-3</code></td>
+                  </tr>
+                  <tr>
+                    <td>연속 감점 (매 스텝)</td>
+                    <td>과속(초과 비율 비례) / 실선 버스차로 주행 / 사이렌 진로 방해</td>
+                    <td class="num-col">최대 <code>-0.3</code> / <code>-0.3</code> / <code>-0.1</code></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Methodology ─────────────────────────────────────────────────── -->
+    <section id="method">
+      <div class="container-wide">
+        <h2 class="section-title">Training Methodologies</h2>
+        <p class="section-subtitle">
+          동일한 신경망 구조(<code>HybridActorCritic</code>, 256–256 ReLU)와 고정 환경 위에서 실험한 3단계 학습 파이프라인
+        </p>
+
+        <!-- Architecture & Pipeline SVG -->
+        <div class="diagram-box">
+          <svg viewBox="0 0 980 230" width="100%" role="img" aria-label="3가지 자율주행 정책 학습 파이프라인 비교 도식">
+            <rect x="10" y="10" width="960" height="210" rx="12" fill="#f8fafc" stroke="#e2e8f0" />
+
+            <!-- Shared Network Box -->
+            <rect x="30" y="45" width="210" height="140" rx="10" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5" />
+            <text x="135" y="72" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">공통 정책 신경망</text>
+            <text x="135" y="92" text-anchor="middle" font-size="11" fill="#475569">Obs (51-D) → MLP 256×2 (ReLU)</text>
+            <line x1="50" y1="104" x2="220" y2="104" stroke="#e2e8f0" />
+            <text x="135" y="124" text-anchor="middle" font-size="11" fill="#1d4ed8" font-weight="600">• mu_head: tanh 가감속 연속 출력</text>
+            <text x="135" y="144" text-anchor="middle" font-size="11" fill="#059669" font-weight="600">• lane_head: 3-way 차로 로짓</text>
+            <text x="135" y="164" text-anchor="middle" font-size="11" fill="#64748b">• v_head: 상태 가치 V(s)</text>
+
+            <!-- Arrows out -->
+            <line x1="240" y1="75" x2="295" y2="55" stroke="#64748b" stroke-width="2" />
+            <line x1="240" y1="115" x2="295" y2="115" stroke="#64748b" stroke-width="2" />
+            <line x1="240" y1="155" x2="295" y2="175" stroke="#64748b" stroke-width="2" />
+
+            <!-- Track 1: Pure PPO Curriculum -->
+            <rect x="300" y="25" width="645" height="52" rx="8" fill="#eff6ff" stroke="#93c5fd" />
+            <text x="318" y="47" font-size="12.5" font-weight="700" fill="#1e3a8a">파이프라인 ① 순수 PPO 4단계 커리큘럼 (Scratch RL)</text>
+            <text x="318" y="65" font-size="11" fill="#334155">1단계 달리기(벌점 0.1×) → 2단계 충돌·이탈 증강 → 3단계 법규 벌점 증강 → 4단계 굳히기 + 단거리 차로·TTC·횡단보도 셰이핑(v8)</text>
+
+            <!-- Track 2: Hybrid BC -> BC+PPO -->
+            <rect x="300" y="89" width="645" height="52" rx="8" fill="#f0fdf4" stroke="#86efac" />
+            <text x="318" y="111" font-size="12.5" font-weight="700" fill="#065f46">파이프라인 ② 하이브리드 BC → PPO 온라인 미세조정 (Imitation-to-RL)</text>
+            <text x="318" y="129" font-size="11" fill="#334155">SUMO 시범 600판 수집 → 가감속 MSE + 희소 차로 역가중 CE + 위험상황 가중 학습 → PPO 파인튜닝 (신호위반 96% 감소)</text>
+
+            <!-- Track 3: Selective Lane-Head Refinement -->
+            <rect x="300" y="153" width="645" height="52" rx="8" fill="#faf5ff" stroke="#d8b4fe" />
+            <text x="318" y="175" font-size="12.5" font-weight="700" fill="#5b21b6">파이프라인 ③ 사후 차로 헤드 선택적 정밀화 (Post-PPO Lane-Head Refinement)</text>
+            <text x="318" y="193" font-size="11" fill="#334155">trunk · mu_head 동결(신호·제동 능력 보존) + 차로 끊김 구간(lane_end) 시범 복원 &amp; 일반 구간 KL 유지로 로터리 정체 해결</text>
+          </svg>
+          <div class="diagram-caption">
+            <strong>Figure 3.</strong> 17조의 3대 정책 학습 전략 개요. 모든 최종 체크포인트는 동일한 <code>HybridActorCritic</code> 가중치 형식으로 저장되어 단일 평가기(<code>eval_daehakro.py</code>)에서 검증됩니다.
+          </div>
+        </div>
+
+        <div class="three-col">
+          <div class="card">
+            <h3>1. 순수 PPO 커리큘럼 (<code>train_ppo_curriculum.py</code>)</h3>
+            <p>
+              시범 데이터 없이 처음부터 큰 충돌·위반 벌점을 부과하면 에이전트가 출발조차 하지 않는 <strong>얼어붙음(Freezing)</strong> 현상이 발생합니다.
+            </p>
+            <ul>
+              <li><strong>진행 거리 기반 4단계 스케줄</strong>: 벌점 배율을 <code>0.1 → 1.0</code>으로 점진 상향하되, 주행 진행도가 절반 이하로 급감하거나 멈춤 비율이 25%를 넘으면 배율을 자동 한 단계 롤백</li>
+              <li><strong>실패 원인 맞춤형 보상 셰이핑(v7·v8)</strong>: 로터리 단거리 막힌 차로(<code>arcN2_1</code>, 12.8 m) 진입 전 감속 유도, 전방 차량 충돌예상시간(TTC) 감점, 횡단보도 위 저속 정체 감점 추가</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h3>2. 하이브리드 BC &amp; BC+PPO (<code>train_bc_hybrid.py</code>, <code>train_bc_ppo.py</code>)</h3>
+            <p>
+              기존 단일 MSE 회귀 BC는 시범 데이터 대부분이 직진(차로 유지 <code>0</code>)이라 차로변경 출력이 <code>0</code> 부근으로 평균화되어 로터리에서 이탈합니다.
+            </p>
+            <ul>
+              <li><strong>하이브리드 손실 분리</strong>: 가감속은 <code>tanh</code> MSE 회귀로, 차로변경은 클래스 빈도 역가중 3-way 교차 엔트로피로 분리 학습</li>
+              <li><strong>위험 상황 가중치(<code>critical_mask</code>)</strong>: 정지선·보행자·상충 차량 근접 스텝 및 덜 밟은(under-brake) 오차에 추가 가중 부여</li>
+              <li><strong>안전 단조 개선 선택</strong>: 시작 BC 모델 성능을 기준선으로 삼아 <code>도착률 + 무위반율 - 2×충돌률</code> 점수가 갱신될 때만 <code>best.pt</code> 교체</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h3>3. 차로 헤드 선택적 복원 (<code>refine_lane_head.py</code>)</h3>
+            <p>
+              BC+PPO 미세조정 후 가감속 제어는 크게 정교해졌으나(신호위반 214→8건), 혜화동로터리 입구 전 미리 바깥 차로로 옮기는 습관이 약해져 <code>arcE</code>(41 m) 끝에서 멈추는 현상을 발견했습니다.
+            </p>
+            <ul>
+              <li><strong>특징 추출기 및 가감속 완전 동결</strong>: PPO가 학습한 제동·신호 준수 능력(<code>trunk</code>, <code>mu_head</code>)을 100% 보존</li>
+              <li><strong>선택적 차로 복원(<code>--target lane_end</code>)</strong>: 관측 <code>[21..25]</code>상 차로가 끊기거나 옆 차로 연결이 더 긴 병목 구간에서만 시범 차로 정답을 학습하고, 나머지 일반 구간은 기존 PPO 로짓과의 KL 발산으로 유지</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Results (Quantitative & Qualitative) ────────────────────────── -->
+    <section id="results" class="alt">
+      <div class="container-wide">
+        <h2 class="section-title">Experimental Results</h2>
+        <p class="section-subtitle">
+          공식 평가 프로토콜: 고정 시드 5개(<code>110, 120, 130, 140, 150</code>) × 각 300 에피소드 = 총 <strong>1,500 에피소드</strong> 결정적(Deterministic) 주행 비교
+        </p>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>모델 / 학습 방법</th>
+                <th class="num-col">평가 판수</th>
+                <th class="num-col">도착률 ↑</th>
+                <th class="num-col">위반 없이 도착 ↑</th>
+                <th class="num-col">총 충돌률 ↓<br /><small>(차량 / 보행자)</small></th>
+                <th class="num-col">오래 멈춤 / 이탈</th>
+                <th class="num-col">신호 / 횡단 / 양보 위반</th>
+                <th class="num-col">버스차로 / 실선 / 과속(판)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <strong>① Pure PPO Curriculum (v8)</strong><br />
+                  <small class="todo-tag">역할 1 최종 수치 입력 예정</small>
+                </td>
+                <td class="num-col">1,500</td>
+                <td class="num-col">[TBD]%</td>
+                <td class="num-col">[TBD]%</td>
+                <td class="num-col">[TBD]%</td>
+                <td class="num-col">[TBD] / [TBD]</td>
+                <td class="num-col">[TBD] / [TBD] / [TBD]</td>
+                <td class="num-col">[TBD] / [TBD] / [TBD]</td>
+              </tr>
+              <tr>
+                <td>
+                  <strong>② Hybrid BC (Baseline)</strong><br />
+                  <small><code>train_bc_hybrid.py</code> (3-way 차로 분류)</small>
+                </td>
+                <td class="num-col">1,500</td>
+                <td class="num-col"><strong>95.8%</strong> (1,437)</td>
+                <td class="num-col">71.2% (1,068)</td>
+                <td class="num-col"><span class="badge-pass">3.9%</span> (40 / 19)</td>
+                <td class="num-col">2 / 1</td>
+                <td class="num-col">214 / 98 / 119</td>
+                <td class="num-col">0 / 0 / 31 (2.1%)</td>
+              </tr>
+              <tr class="highlight-row">
+                <td>
+                  <strong>③ Hybrid BC + PPO Fine-Tuning</strong><br />
+                  <small><code>bcppo_A_default</code> (<code>ckpt_638976.pt</code>)</small>
+                </td>
+                <td class="num-col">1,500</td>
+                <td class="num-col">92.7% (1,390)</td>
+                <td class="num-col"><strong>80.5%</strong> (1,207)</td>
+                <td class="num-col"><span class="badge-pass">3.5%</span> (48 / <strong>5</strong>)</td>
+                <td class="num-col">49 / <strong>0</strong></td>
+                <td class="num-col"><strong>8</strong> / 78 / 116</td>
+                <td class="num-col"><strong>0 / 0</strong> / 28 (1.9%)</td>
+              </tr>
+              <tr>
+                <td>
+                  <strong>④ Critical-Weighted Hybrid BC</strong><br />
+                  <small><code>bchw_s20</code> (개발 시드 100판 검증 · <span class="todo-tag">1,500판 갱신 예정</span>)</small>
+                </td>
+                <td class="num-col">100 <small>(dev)</small></td>
+                <td class="num-col">99.0%</td>
+                <td class="num-col">81.0%</td>
+                <td class="num-col"><span class="badge-pass">1.0%</span> (0 / 1)</td>
+                <td class="num-col">0 / 0</td>
+                <td class="num-col">8 / 5 / 7</td>
+                <td class="num-col">0 / 0 / -</td>
+              </tr>
+              <tr class="highlight-row">
+                <td>
+                  <strong>⑤ BC + PPO + Selective Lane Refine</strong><br />
+                  <small><code>c638_end_k3.pt</code> (개발 시드 100판 검증 · <span class="todo-tag">1,500판 갱신 예정</span>)</small>
+                </td>
+                <td class="num-col">100 <small>(dev)</small></td>
+                <td class="num-col"><strong>99.0%</strong></td>
+                <td class="num-col"><strong>82.0%</strong></td>
+                <td class="num-col"><span class="badge-pass">0.0%</span> (0 / 0)</td>
+                <td class="num-col"><strong>1</strong> / <strong>0</strong></td>
+                <td class="num-col"><strong>0</strong> / 5 / 10</td>
+                <td class="num-col"><strong>0 / 0</strong> / -</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 핵심 정량 인사이트 바 카드 -->
+        <div class="metric-bars">
+          <div class="bar-card">
+            <h4>위반 없이 도착률 (Clean Arrival, 1,500판)</h4>
+            <div class="bar-row">
+              <div class="bar-meta"><span>Hybrid BC</span><strong>71.2%</strong></div>
+              <div class="bar-track"><div class="bar-fill" style="width: 71.2%"></div></div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-meta"><span>Hybrid BC + PPO</span><strong>80.5% (+9.3%p)</strong></div>
+              <div class="bar-track"><div class="bar-fill green" style="width: 80.5%"></div></div>
+            </div>
+          </div>
+
+          <div class="bar-card">
+            <h4>신호위반 건수 절감 (1,500판 합계)</h4>
+            <div class="bar-row">
+              <div class="bar-meta"><span>Hybrid BC</span><strong>214 건</strong></div>
+              <div class="bar-track"><div class="bar-fill amber" style="width: 100%"></div></div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-meta"><span>Hybrid BC + PPO</span><strong>8 건 (-96.3%)</strong></div>
+              <div class="bar-track"><div class="bar-fill green" style="width: 3.7%"></div></div>
+            </div>
+          </div>
+
+          <div class="bar-card">
+            <h4>보행자 충돌 건수 절감 (1,500판 합계)</h4>
+            <div class="bar-row">
+              <div class="bar-meta"><span>Hybrid BC</span><strong>19 건</strong></div>
+              <div class="bar-track"><div class="bar-fill amber" style="width: 100%"></div></div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-meta"><span>Hybrid BC + PPO</span><strong>5 건 (-73.7%)</strong></div>
+              <div class="bar-track"><div class="bar-fill green" style="width: 26.3%"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 구간별 주행 시연 영상 2x2 그리드 -->
+        <h3 style="margin: 2.5rem 0 0.9rem 0; text-align: center; color: var(--text-main);">
+          주요 도로 상호작용 구간별 주행 영상 (Scenario Highlights)
+        </h3>
+        <div class="two-col">
+          <div class="card">
+            <div class="img-placeholder">
+              <strong>Scenario 1 · 이화장길 어린이보호구역 <span class="todo-tag">클립 추가 권장</span></strong>
+              <span>30 km/h 속도 준수 · 학부모 정차 차량 회피 · 보행자 횡단보도 정지<br /><code>docs/assets/videos/scene1_schoolzone.mp4</code></span>
+            </div>
+            <h3>어린이보호구역 속도 제어 및 보행자 보호</h3>
+            <p>제한속도 강제 커팅 없이도 관측 <code>[31]</code>(제한속도 비율 0.6)과 <code>[35..36]</code>(횡단보도 보행자)을 인식해 감속·일시정지합니다.</p>
+          </div>
+
+          <div class="card">
+            <div class="img-placeholder">
+              <strong>Scenario 2 · 버스전용차로 &amp; 정류장 회피 <span class="todo-tag">클립 추가 권장</span></strong>
+              <span>실선 버스전용차로 침범 0건 · 정차 버스 인식 후 일반 차로 추월<br /><code>docs/assets/videos/scene2_buslane.mp4</code></span>
+            </div>
+            <h3>버스전용차로 법규 준수 및 정차 차량 대응</h3>
+            <p>1,500 에피소드 전체에서 <strong>실선 버스전용차로 침범 0건, 실선 차로변경 위반 0건</strong>을 달성했습니다.</p>
+          </div>
+
+          <div class="card">
+            <div class="img-placeholder">
+              <strong>Scenario 3 · 사이렌 긴급차 접근 대응 <span class="todo-tag">클립 추가 권장</span></strong>
+              <span>후방 구급차/소방차 감지(<code>[43..44]</code>) 및 진로 양보 주행<br /><code>docs/assets/videos/scene3_emergency.mp4</code></span>
+            </div>
+            <h3>긴급차량 진로 양보 상호작용</h3>
+            <p>후방 100 m 내 사이렌 차량 접근 시 인접 차로로 비켜주며 주변 일반 차량의 긴급차 보조 움직임과 조화롭게 주행합니다.</p>
+          </div>
+
+          <div class="card">
+            <div class="img-placeholder">
+              <strong>Scenario 4 · 혜화동로터리 다중 차로변경 <span class="todo-tag">클립 추가 권장</span></strong>
+              <span>BC+PPO <code>arcE</code> 정체 현상 vs <code>lane_head</code> 복원 후 매끄러운 회전 통과<br /><code>docs/assets/videos/scene4_rotary.mp4</code></span>
+            </div>
+            <h3>혜화동로터리 진입 · 상충 양보 · 이탈</h3>
+            <p>사후 <code>lane_head</code> 선택적 정밀화를 통해 로터리 입구 사전 차로변경을 복원하여 <code>arcE</code> 정체 멈춤을 해소했습니다.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Dataset (Hugging Face) ──────────────────────────────────────── -->
+    <section id="dataset">
+      <div class="container-wide">
+        <h2 class="section-title">Daehak-ro POMDP Dataset (Hugging Face)</h2>
+        <p class="section-subtitle">
+          수업 표준 POMDP 트랜지션 포맷 호환 + 대학로 도심 교통 특화 23개 Privileged State 항목 확장 공개
+        </p>
+
+        <div class="two-col" style="margin-bottom: 1.4rem;">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>확장 필드명</th>
+                  <th>데이터 형식 및 설명 (<code>collect_pomdp_data_daehakro.py</code>)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>state.sim_time</code></td>
+                  <td>현재 스텝의 시뮬레이션 시각 (초, <code>daehakro.tll.xml</code>과 결합해 잔여 신호 시간 복원 가능)</td>
+                </tr>
+                <tr>
+                  <td><code>state.tls.&lt;id&gt;</code> × 15</td>
+                  <td>대학로·로터리 <strong>15개 신호등(총 137개 연결)</strong>의 실시간 현시 상태 (초록 <code>1</code> / 노랑 <code>0</code> / 빨강 <code>-1</code>)</td>
+                </tr>
+                <tr>
+                  <td><code>state.junction_foes</code></td>
+                  <td>교차로 상충 차량 목록 <code>[상대 id, AV 상충점 거리, 상대 상충점 거리, AV 양보 의무 여부]</code></td>
+                </tr>
+                <tr>
+                  <td><code>state.persons</code></td>
+                  <td>AV 반경 50 m 내 보행자 <code>[id, 어린이(1)/성인(0), x, y, 속도, 현재 보도·횡단보도 id]</code></td>
+                </tr>
+                <tr>
+                  <td><code>vehicles[].type_id</code>, <code>stopped</code></td>
+                  <td>배경 차량 차종(버스·승용·긴급차 등) 및 정류장/학부모 경로 정차 여부(신호 대기와 구분)</td>
+                </tr>
+                <tr>
+                  <td><code>vehicles[].signals</code>, <code>assist</code></td>
+                  <td>방향지시등·제동등 비트마스크 및 긴급차 보조 상태 코드(<code>0~5</code>: 비켜줌·꼬리물기 방지 등)</td>
+                </tr>
+                <tr>
+                  <td><code>event.collision_with</code></td>
+                  <td>충돌 발생 시 상대 객체 ID 기록 (무충돌 시 <code>null</code>)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <div class="card">
+              <h3>📦 제공 파일 구성 (JSONL.gz + NPZ 이중 포맷)</h3>
+              <ul>
+                <li><code>pomdp_*.jsonl.gz</code>: 가변 길이 객체(보행자·상충 차량·전체 배경차 상태)를 모두 포함한 무손실 트랜지션 시퀀스</li>
+                <li><code>pomdp_*.npz</code>: <code>allow_pickle=False</code>로 즉시 고속 로드 가능한 고정 크기 배열 (<code>obs (N,51)</code>, <code>act (N,2)</code>, <code>tls (N,137)</code>, <code>detected_xy</code> + <code>offsets</code>)</li>
+                <li><code>tls_index.json</code> &amp; <code>daehakro.tll.xml</code>: 137개 신호 연결 매핑표 및 신호 주기 프로그램 원본</li>
+              </ul>
+            </div>
+
+            <div class="code-panel">
+              <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre><code># 1) NPZ 고속 로드 (BC / Offline RL / Representation 학습용)
+import numpy as np
+data = np.load("pomdp_daehakro.npz")  # allow_pickle 불필요
+obs, act, rew = data["observations"], data["actions"], data["rewards"]
+tls_137 = data["tls"]                 # (N, 137) 실시간 15개 신호등 현시
+
+# 2) JSONL.gz 전체 Privileged State 순회
+from collect_pomdp_data_daehakro import iter_transitions
+for step in iter_transitions("pomdp_daehakro.jsonl.gz"):
+    foes = step["state"]["junction_foes"]
+    peds = step["state"]["persons"]</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Reproducibility & Quick Start ───────────────────────────────── -->
+    <section id="reproduce" class="alt">
+      <div class="container">
+        <h2 class="section-title">Reproducibility &amp; Quick Start</h2>
+        <p class="section-subtitle">
+          SUMO 1.27.1 · Python 3.12 환경에서 해시 무결성 확인부터 모델 평가·데이터 수집까지 즉시 재현할 수 있습니다.
+        </p>
+
+        <div class="code-panel">
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre><code># 1. 도로 네트워크 생성 및 공통 환경 무결성 검증 (PROTECTED.sha256)
+python -m env.daehakro_builder
+python check_setup.py                  # -> "결과: 모두 OK" 확인
+
+# 2. 공식 1,500 에피소드 결정적 평가 재현 (seed 110, 120, 130, 140, 150 × 각 300판)
+python eval_daehakro.py results/bcppo_A_default/ckpt_638976.pt --episodes 300 --seed 110
+
+# 3. 대학로 확장 POMDP 데이터셋 수집
+python collect_pomdp_data_daehakro.py --model results/bcppo_A_default/ckpt_638976.pt --episodes 100 --workers 6</code></pre>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ─── Footer ──────────────────────────────────────────────────────────── -->
+  <footer>
+    <div class="container">
+      <p style="margin: 0 0 0.4rem 0; font-weight: 600; color: var(--text-main);">
+        성균관대학교 자율주행 인공지능 및 제어 · 17조 최종 프로젝트 (양준연 · 이준서 · 곽재현)
+      </p>
+      <p style="margin: 0;">
+        페이지 양식 참고: Academic Project Page Template (<a href="https://park-sangeun.github.io/Multi-Square/" target="_blank" rel="noopener">Multi-Square</a>,
+        <a href="https://9hyeon1225.github.io/van/" target="_blank" rel="noopener">VAN</a>,
+        <a href="https://9hyeon1225.github.io/LAC/" target="_blank" rel="noopener">LAC</a>)
+      </p>
+    </div>
+  </footer>
+
+  <!-- 링크 바인딩 및 코드 복사 스크립트 -->
+  <script>
+    (function () {
+      var links = window.PROJECT_LINKS || {};
+      function bind(cls, url) {
+        if (!url) return;
+        document.querySelectorAll("." + cls).forEach(function (el) {
+          el.setAttribute("href", url);
+        });
+      }
+      bind("js-link-github", links.github);
+      bind("js-link-pdf", links.slidesPdf);
+      bind("js-link-hf", links.huggingface);
+      bind("js-link-video", links.videoSection);
+    })();
+
+    function copyCode(btn) {
+      var pre = btn.parentElement.querySelector("pre");
+      if (!pre) return;
+      navigator.clipboard.writeText(pre.innerText).then(function () {
+        var prev = btn.textContent;
+        btn.textContent = "Copied!";
+        setTimeout(function () {
+          btn.textContent = prev;
+        }, 1400);
+      });
+    }
+  </script>
+</body>
+</html>
