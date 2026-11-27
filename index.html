@@ -204,6 +204,7 @@
         <div>
           <div class="eyebrow">SECTION 01 · REAL MAP VS SUMO-GUI</div>
           <h2 class="section-title">이화사거리 ~ 혜화동로터리: 실제 지도 vs SUMO 화면</h2>
+          <p class="section-desc"><strong>1.52 km 안에 보호구역 무신호 합류 → 버스전용차로 → 소방서 긴급출동 → 대형 횡단보도 → 5갈래 신호 로터리</strong>가 이어지고, 그 사이 버스·소방차에 시야가 가려 합류·양보·감속 판단이 계속 필요한 구간입니다.</p>
           <p class="section-desc">왼쪽 OpenStreetMap, 오른쪽 sumo-gui. 위쪽이 북쪽이고, 누르면 크게 보입니다.</p>
         </div>
         <div class="section-jump-controls">
@@ -368,7 +369,7 @@
             <h3>신호 대기 줄에서 뒤에 소방차가 붙은 상황</h3>
             <div class="scene-pair">
               <div class="scene-item"><span class="scene-key">상황</span><span>대기 줄에서 같은 차로 뒤에 소방차 (<code>obs[44]=1</code>)</span></div>
-              <div class="scene-item act"><span class="scene-key">AV</span><span>앞이 막혀 차로 유지, 신호가 바뀌면 진입</span></div>
+              <div class="scene-item act"><span class="scene-key">AV</span><span>옆·앞이 대기 줄로 막혀 비킬 틈이 없음 → 무리하게 끼어들지 않고 차로 유지, 신호가 바뀌면 진입 (틈이 생긴 뒤 5초 안 양보율은 <a href="#results" data-scroll="#results">성적표</a>의 27%)</span></div>
             </div>
           </div>
         </article>
@@ -513,6 +514,29 @@
         </div>
         <div class="train-net-line">
           정책 신경망 <code>HybridActorCritic</code>: 관측 50 → Linear 256 → Linear 256 → 가감속(연속) + 차로변경(좌·유지·우)
+        </div>
+        <div class="reward-line">
+          <div class="reward-head">보상 · 교통법규는 코드로 막지 않고 감점으로 학습</div>
+          <div class="reward-group">
+            <span class="reward-kind">스텝마다</span>
+            <span class="rw plus">진행 +0.1</span>
+            <span class="rw minus">시간 −0.01</span>
+            <span class="rw minus">과속 −0.3×초과율</span>
+            <span class="rw minus">버스전용차로 −0.3</span>
+            <span class="rw minus">앞차 바짝 붙음</span>
+            <span class="rw minus">사이렌 차 앞 막기 −0.1</span>
+          </div>
+          <div class="reward-group">
+            <span class="reward-kind">한 번씩</span>
+            <span class="rw plus">도착 +10</span>
+            <span class="rw minus">차 충돌 −20</span>
+            <span class="rw minus">보행자 충돌 −40</span>
+            <span class="rw minus">빨간불 −15</span>
+            <span class="rw minus">횡단보도 −10</span>
+            <span class="rw minus">양보 위반 −8</span>
+            <span class="rw minus">실선 침범 −3</span>
+            <span class="rw minus">경로 이탈 −20</span>
+          </div>
         </div>
       </div>
 
@@ -707,7 +731,10 @@ python occ_report.py models/bc_track.pt models/ppo_track.pt --episodes 300
 python siren_diag.py oracle expert models/ppo_track.pt --episodes 150
 
 # 처음부터 전체 학습 재현 (시범 2,000판 → BC → PPO 60만 스텝)
-bash run_train.sh</pre>
+bash run_train.sh
+
+# 최종 모델로 주행 데이터 수집 (data/ 에 npz 로 저장)
+python collect_pomdp_data_daehakro.py --model models/ppo_track.pt --episodes 10</pre>
         </div>
       </div>
 

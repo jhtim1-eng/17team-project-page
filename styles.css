@@ -1659,6 +1659,28 @@ table.data-table {
   color: #cbd5e1;
 }
 .train-net-line code { color: #93c5fd; }
+.reward-line {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #0b1220;
+  border: 1px solid #334155;
+  display: grid;
+  gap: 8px;
+}
+.reward-head { font-size: 0.82rem; font-weight: 700; color: #e2e8f0; }
+.reward-group { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.reward-kind { font-size: 0.74rem; color: #94a3b8; min-width: 56px; }
+.rw {
+  font-size: 0.76rem;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid #334155;
+  color: #cbd5e1;
+  white-space: nowrap;
+}
+.rw.plus { border-color: #10b981; color: #6ee7b7; }
+.rw.minus { border-color: #7f1d1d; color: #fca5a5; }
 @media (max-width: 1024px) {
   .train-flow { grid-template-columns: 1fr; }
   .train-flow .schem-arrow { transform: rotate(90deg); }
