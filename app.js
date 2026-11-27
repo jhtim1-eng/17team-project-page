@@ -49,7 +49,7 @@
     const url = linksCfg[key];
     if (url && !url.startsWith("TODO")) {
       el.setAttribute("href", url);
-      if (url.startsWith("http")) {
+      if (url.startsWith("http") || url.endsWith(".pdf")) {
         el.setAttribute("target", "_blank");
         el.setAttribute("rel", "noopener noreferrer");
       }
