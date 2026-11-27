@@ -3,7 +3,7 @@
 성균관대학교 자율주행인공지능및제어 17조 프로젝트 페이지입니다.
 
 - 페이지: GitHub Pages 로 이 저장소의 루트(`index.html`)를 공개합니다.
-- 코드: <https://github.com/junyeounyang/17team_FINAL/tree/final>
+- 코드: <https://github.com/junyeounyang/Team17_Final_Code>
 
 ## 들어 있는 것
 

@@ -21,9 +21,9 @@
        ===================================================================== -->
   <script>
     window.PROJECT_LINKS = {
-      github: "https://github.com/junyeounyang/17team_FINAL/tree/final",
+      github: "https://github.com/junyeounyang/Team17_Final_Code",
       slides: "TODO_REPLACE_WITH_PUBLIC_PDF_URL_OR_PUT_PDF_IN_ASSETS",
-      dataset: "TODO_REPLACE_WITH_HUGGINGFACE_DATASET_URL",
+      dataset: "https://huggingface.co/datasets/KCVS/Daehakro-Team17-POMDP",
       videoFile: "assets/videos/hero_full_drive.mp4"
     };
   </script>
@@ -89,7 +89,7 @@
 
       <!-- Mandatory Project Links Bar -->
       <div class="resource-bar">
-        <a class="res-btn primary" data-resource="github" href="https://github.com/junyeounyang/17team_FINAL/tree/final" target="_blank" rel="noopener noreferrer">
+        <a class="res-btn primary" data-resource="github" href="https://github.com/junyeounyang/Team17_Final_Code" target="_blank" rel="noopener noreferrer">
           <span class="res-icon">💻</span>
           <span>코드 저장소 (GitHub)</span>
         </a>
@@ -711,8 +711,8 @@
             <span>1) 환경 준비 및 SUMO-GUI 주행 눈으로 보기</span>
             <button type="button" class="copy-btn" data-copy-target="cmdSetup">복사 (Copy)</button>
           </div>
-          <pre id="cmdSetup">git clone -b final https://github.com/junyeounyang/17team_FINAL.git 17team_submit
-cd 17team_submit
+          <pre id="cmdSetup">git clone https://github.com/junyeounyang/Team17_Final_Code.git
+cd Team17_Final_Code
 conda activate sumo-rl
 python check_setup.py
 
@@ -753,7 +753,7 @@ python collect_pomdp_data_daehakro.py --model models/ppo_track.pt --episodes 10<
         <span>서울 대학로(이화사거리 ~ 혜화동로터리) 부분관측 자율주행 환경 및 BC → PPO 정책</span>
       </div>
       <div style="display:flex;gap:14px;flex-wrap:wrap;">
-        <a href="https://github.com/junyeounyang/17team_FINAL/tree/final" target="_blank" rel="noopener noreferrer" style="color:#38bdf8;font-weight:700;">GitHub 저장소 ↗</a>
+        <a href="https://github.com/junyeounyang/Team17_Final_Code" target="_blank" rel="noopener noreferrer" style="color:#38bdf8;font-weight:700;">GitHub 저장소 ↗</a>
         <a data-resource="slides" href="#slides" style="color:#cbd5e1;font-weight:700;">발표자료 (PDF)</a>
         <a data-resource="dataset" href="#dataset" style="color:#cbd5e1;font-weight:700;">Hugging Face 데이터셋</a>
         <a href="#top" data-scroll="#top" style="color:#cbd5e1;font-weight:700;">↑ 맨 위로</a>
